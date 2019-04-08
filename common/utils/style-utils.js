@@ -1,3 +1,5 @@
+import customErrorMessages from 'common/constants/customErrorMessages';
+
 /**
  * @description Return the number from a pixel-valued string
  *
@@ -85,10 +87,7 @@ export function getSortedBreakpointValues(arrayOfBreakpointValues) {
  */
 export function getBreakpoints(arrayOfBreakpointValues) {
   if (arrayOfBreakpointValues.length !== 4) {
-    throw new Error(`
-      We require a small, medium, large, and extra-large breakpoint. Ensure
-      "common/styles/variables.css" has exactly 4 breakpoint values.
-    `);
+    throw new Error(customErrorMessages.missingBreakpoints);
   }
 
   const sortedBreakpointValues = getSortedBreakpointValues(arrayOfBreakpointValues);

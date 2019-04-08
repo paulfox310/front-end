@@ -1,4 +1,5 @@
 /* eslint-env jest */
+import customErrorMessages from 'common/constants/customErrorMessages';
 import {
   getNumberFromPixelValue,
   hasPixelSuffix,
@@ -78,8 +79,7 @@ describe('Style Utilities', () => {
   describe('getBreakpoints', () => {
     const testValues = ['768px', '1000px', '900px', '500px'];
 
-    const errorMessage = `We require a small, medium, large, and extra-large breakpoint. Ensure
-      "common/styles/variables.css" has exactly 4 breakpoint values.`;
+    const errorMessage = customErrorMessages.missingBreakpoints;
 
     it('should throw an error when passed an array with fewer than 4 items', () => {
       expect(() => getBreakpoints([testValues[0], testValues[1], testValues[2]])).toThrow(
