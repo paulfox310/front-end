@@ -79,13 +79,13 @@ class OperationCodeApp extends App {
   }
 }
 
-// Fixes Next CSS route change bug: https://github.com/zeit/next-plugins/issues/282
+// Fixes Next CSS route change bug: https://github.com/zeit/next-plugins/issues/282#issuecomment-480740246
 if (process.env.NODE_ENV !== 'production') {
   Router.events.on('routeChangeComplete', () => {
-    const chunksSelector = 'link[href*="/_next/static/css/styles.chunk.css"]';
+    const chunksSelector = 'link[href*="/_next/static/chunks/styles.chunk.css"]';
     const chunksNodes = document.querySelectorAll(chunksSelector);
     const timestamp = new Date().valueOf();
-    chunksNodes[0].href = `/_next/static/css/styles.chunk.css?v=${timestamp}`;
+    chunksNodes[0].href = `/_next/static/chunks/styles.chunk.css?${timestamp}`;
   });
 }
 
