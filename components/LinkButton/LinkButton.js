@@ -1,19 +1,20 @@
 import React from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
+import { string, node, bool, oneOf } from 'prop-types';
 import Link from 'next/link';
 import OutboundLink from 'components/OutboundLink/OutboundLink';
 import styles from 'components/Button/Button.css';
 
 LinkButton.propTypes = {
   // Only pass analytics event label if you're href is to an external website
-  analyticsEventLabel: PropTypes.string,
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-  disabled: PropTypes.bool,
-  fullWidth: PropTypes.bool,
-  href: PropTypes.string.isRequired,
-  theme: PropTypes.oneOf(['primary', 'secondary']),
+  analyticsEventLabel: string,
+  children: node.isRequired,
+  className: string,
+  disabled: bool,
+  fullWidth: bool,
+  href: string.isRequired,
+  shouldPrefetch: bool,
+  theme: oneOf(['primary', 'secondary']),
 };
 
 LinkButton.defaultProps = {
@@ -21,6 +22,7 @@ LinkButton.defaultProps = {
   className: undefined,
   disabled: false,
   fullWidth: false,
+  shouldPrefetch: false,
   theme: 'primary',
 };
 
@@ -30,6 +32,7 @@ export default function LinkButton({
   className,
   fullWidth,
   href,
+  shouldPrefetch,
   theme,
 }) {
   const linkButtonClassNames = classNames(styles.Button, className, styles[theme], {
@@ -37,7 +40,7 @@ export default function LinkButton({
   });
 
   return (
-    <Link href={href}>
+    <Link href={href} prefetch={shouldPrefetch}>
       {analyticsEventLabel && process.env.NODE_ENV === 'production' ? (
         <OutboundLink
           analyticsEventLabel={analyticsEventLabel}

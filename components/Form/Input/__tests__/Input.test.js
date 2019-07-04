@@ -1,8 +1,7 @@
-/* eslint-env jest */
 import React from 'react';
 import { Formik, Field } from 'formik';
+import { wait } from '@testing-library/react';
 import createSnapshotTest from 'test-utils/createSnapshotTest';
-import wait from 'test-utils/wait';
 import { shallow, mount } from 'enzyme';
 
 import Form from '../../Form';
@@ -21,8 +20,8 @@ describe('Input', () => {
     createSnapshotTest(<Input {...requiredProps} />);
   });
 
-  it('should render with label', () => {
-    const wrapper = shallow(<Input {...requiredProps} />);
+  it('should render with label, even if hidden', () => {
+    const wrapper = shallow(<Input {...requiredProps} isLabelHidden />);
 
     expect(wrapper).toContainExactlyOneMatchingElement('Label');
   });

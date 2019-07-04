@@ -1,12 +1,13 @@
 /* eslint-disable react/no-multi-comp */
 import React from 'react';
 import faker from 'faker';
+import get from 'lodash/get';
 import { mount } from 'enzyme';
 import { Field } from 'formik';
 import * as Yup from 'yup';
 import { networkErrorMessages } from 'common/constants/messages';
 import asyncRenderDiff from 'test-utils/asyncRenderDiff';
-import MultiStepForm from '../MultiStepForm';
+import { MultiStepForm } from '../MultiStepForm';
 
 const submitForm = async enzymeWrapper => {
   const submitButton = enzymeWrapper.find('button[type="submit"]');
@@ -26,6 +27,11 @@ function makeNameForm(submitHandler = jest.fn()) {
       firstName: Yup.string().required(),
       lastName: Yup.string().required(),
     });
+
+    static initialValues = {
+      firstName: '',
+      lastName: '',
+    };
 
     static submitHandler = submitHandler;
 
@@ -72,6 +78,10 @@ describe('MultiStepForm', () => {
         .required(),
     });
 
+    static initialValues = {
+      ultimateAnswer: '',
+    };
+
     static submitHandler = ultimateAnswerFormSubmitHandler;
 
     render() {
@@ -96,6 +106,11 @@ describe('MultiStepForm', () => {
       favoriteNumber: Yup.string().required(),
       favoritePerson: Yup.string(),
     });
+
+    static initialValues = {
+      favoriteNumber: '',
+      favoritePerson: '',
+    };
 
     static submitHandler = favoritesFormSubmitHandler;
 
@@ -124,6 +139,16 @@ describe('MultiStepForm', () => {
     }
   }
 
+  const getErrorMessage = jest.fn().mockImplementation(error => {
+    const serverError = get(error, 'response.data.error', '');
+
+    if (serverError) {
+      return serverError;
+    }
+
+    return error.message;
+  });
+
   const requiredProps = {
     initialValues: {
       firstName: '',
@@ -132,8 +157,8 @@ describe('MultiStepForm', () => {
       favoriteNumber: '',
       favoritePerson: '',
     },
+    getErrorMessage,
     onFinalSubmit: jest.fn(),
-    onFinalSubmitSuccess: jest.fn(),
     steps: [NameForm, UltimateAnswerForm, FavoritesForm],
   };
 
@@ -170,14 +195,7 @@ describe('MultiStepForm', () => {
 
   it('should call final handlers after last step submission in happy-path', async () => {
     const onFinalSubmitMock = jest.fn();
-    const onFinalSubmitSuccessMock = jest.fn();
-    const wrapper = mount(
-      <MultiStepForm
-        {...requiredProps}
-        onFinalSubmit={onFinalSubmitMock}
-        onFinalSubmitSuccess={onFinalSubmitSuccessMock}
-      />,
-    );
+    const wrapper = mount(<MultiStepForm {...requiredProps} onFinalSubmit={onFinalSubmitMock} />);
 
     typeIntoInput(wrapper, 'firstName', faker.name.firstName());
     typeIntoInput(wrapper, 'lastName', faker.name.lastName());
@@ -193,20 +211,36 @@ describe('MultiStepForm', () => {
     await submitForm(wrapper);
 
     expect(onFinalSubmitMock).toHaveBeenCalledTimes(1);
-    expect(onFinalSubmitSuccessMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call onEachStepSubmit handler after each step submission in happy-path', async () => {
+    const onEachStepSubmit = jest.fn();
+    const wrapper = mount(<MultiStepForm {...requiredProps} onEachStepSubmit={onEachStepSubmit} />);
+
+    typeIntoInput(wrapper, 'firstName', faker.name.firstName());
+    typeIntoInput(wrapper, 'lastName', faker.name.lastName());
+    await submitForm(wrapper);
+
+    expect(onEachStepSubmit).toHaveBeenCalledTimes(1);
+
+    typeIntoInput(wrapper, 'ultimateAnswer', '42');
+    await submitForm(wrapper);
+
+    expect(onEachStepSubmit).toHaveBeenCalledTimes(2);
+
+    typeIntoInput(wrapper, 'favoriteNumber', faker.random.number());
+    typeIntoInput(wrapper, 'favoritePerson', faker.name.firstName());
+    await submitForm(wrapper);
+
+    expect(onEachStepSubmit).toHaveBeenCalledTimes(3);
   });
 
   it('should handle error on final submit if success handler throws', async () => {
-    const onFinalSubmitSuccessMock = jest.fn();
-    const onFinalSubmitMock = jest.fn().mockRejectedValue(new Error());
+    const onFinalSubmitMock = jest
+      .fn()
+      .mockRejectedValue(new Error(networkErrorMessages.serverDown));
 
-    const wrapper = mount(
-      <MultiStepForm
-        {...requiredProps}
-        onFinalSubmit={onFinalSubmitMock}
-        onFinalSubmitSuccess={onFinalSubmitSuccessMock}
-      />,
-    );
+    const wrapper = mount(<MultiStepForm {...requiredProps} onFinalSubmit={onFinalSubmitMock} />);
 
     typeIntoInput(wrapper, 'firstName', faker.name.firstName());
     typeIntoInput(wrapper, 'lastName', faker.name.lastName());
@@ -221,23 +255,16 @@ describe('MultiStepForm', () => {
     await submitForm(wrapper);
 
     expect(wrapper.find('Alert').text()).toStrictEqual(networkErrorMessages.serverDown);
-    expect(onFinalSubmitSuccessMock).toHaveBeenCalledTimes(0);
   });
 
   it('should handle server error on final submit', async () => {
-    const onFinalSubmitSuccessMock = jest.fn();
+    const errorMessage = 'Unauthorized request';
+
     const onFinalSubmitMock = jest
       .fn()
-      .mockRejectedValue({ response: { data: { favoritePerson: ['is not allowed'] } } });
-    const cleanedUpNetworkErrorMessage = 'FavoritePerson is not allowed.';
+      .mockRejectedValue({ response: { data: { error: errorMessage } } });
 
-    const wrapper = mount(
-      <MultiStepForm
-        {...requiredProps}
-        onFinalSubmit={onFinalSubmitMock}
-        onFinalSubmitSuccess={onFinalSubmitSuccessMock}
-      />,
-    );
+    const wrapper = mount(<MultiStepForm {...requiredProps} onFinalSubmit={onFinalSubmitMock} />);
 
     typeIntoInput(wrapper, 'firstName', faker.name.firstName());
     typeIntoInput(wrapper, 'lastName', faker.name.lastName());
@@ -251,24 +278,16 @@ describe('MultiStepForm', () => {
     typeIntoInput(wrapper, 'favoritePerson', faker.name.firstName());
     await submitForm(wrapper);
 
-    expect(wrapper.find('Alert').text()).toStrictEqual(cleanedUpNetworkErrorMessage);
-    expect(onFinalSubmitSuccessMock).toHaveBeenCalledTimes(0);
+    expect(wrapper.find('Alert').text()).toStrictEqual(errorMessage);
   });
 
   it('should wipe error message between an invalid and valid submit', async () => {
-    const onFinalSubmitSuccessMock = jest.fn();
     const onFinalSubmitMock = jest
       .fn()
-      .mockRejectedValueOnce(new Error())
+      .mockRejectedValueOnce(new Error(networkErrorMessages.serverDown))
       .mockResolvedValueOnce();
 
-    const wrapper = mount(
-      <MultiStepForm
-        {...requiredProps}
-        onFinalSubmit={onFinalSubmitMock}
-        onFinalSubmitSuccess={onFinalSubmitSuccessMock}
-      />,
-    );
+    const wrapper = mount(<MultiStepForm {...requiredProps} onFinalSubmit={onFinalSubmitMock} />);
 
     typeIntoInput(wrapper, 'firstName', faker.name.firstName());
     typeIntoInput(wrapper, 'lastName', faker.name.lastName());
@@ -283,12 +302,10 @@ describe('MultiStepForm', () => {
     await submitForm(wrapper);
 
     expect(wrapper.find('Alert').text()).toStrictEqual(networkErrorMessages.serverDown);
-    expect(onFinalSubmitSuccessMock).toHaveBeenCalledTimes(0);
 
     await submitForm(wrapper);
 
     expect(wrapper.find('Alert').text()).toStrictEqual('');
-    expect(onFinalSubmitSuccessMock).toHaveBeenCalledTimes(1);
   });
 
   it('should be able to go back and forth between steps, maintaining form state', async () => {
@@ -318,6 +335,53 @@ describe('MultiStepForm', () => {
     expect(wrapper.find('input#lastName').props().value).toStrictEqual(lastNameValue);
   });
 
+  it('calls setFieldTouched for every field on prev step if calling showPreviousStep', async () => {
+    const wrapper = mount(<MultiStepForm {...requiredProps} />);
+
+    const firstNameValue = faker.name.firstName();
+    const lastNameValue = faker.name.lastName();
+
+    typeIntoInput(wrapper, 'firstName', firstNameValue);
+    typeIntoInput(wrapper, 'lastName', lastNameValue);
+    await submitForm(wrapper);
+
+    // make sure that step 2's input is untouched & visible after step 1 submission
+    expect(wrapper.find('input')).toHaveLength(1);
+    expect(wrapper.find('input#ultimateAnswer').exists()).toBe(true);
+    expect(wrapper.find('input#ultimateAnswer').prop('touched')).toStrictEqual({
+      firstName: true,
+      lastName: true,
+      favoriteNumber: true,
+      favoritePerson: true,
+      ultimateAnswer: false,
+    });
+
+    // click on "Previous" button
+    const goToPreviousStepButton = wrapper.find('button[type="button"]');
+    expect(goToPreviousStepButton.exists()).toBe(true);
+    expect(goToPreviousStepButton.text()).toContain('Previous');
+    goToPreviousStepButton.simulate('click');
+
+    // make sure that step 1's inputs are untouched & visible after clicking "Previous" from step 1
+    expect(wrapper.find('input')).toHaveLength(2);
+    expect(wrapper.find('input#firstName').exists()).toBe(true);
+    expect(wrapper.find('input#lastName').exists()).toBe(true);
+    expect(wrapper.find('input#firstName').prop('touched')).toStrictEqual({
+      firstName: false,
+      lastName: false,
+      favoriteNumber: true,
+      favoritePerson: true,
+      ultimateAnswer: false,
+    });
+    expect(wrapper.find('input#lastName').prop('touched')).toStrictEqual({
+      firstName: false,
+      lastName: false,
+      favoriteNumber: true,
+      favoritePerson: true,
+      ultimateAnswer: false,
+    });
+  });
+
   it('should call custom step handler after submitting', async () => {
     const wrapper = mount(<MultiStepForm {...requiredProps} />);
 
@@ -329,7 +393,9 @@ describe('MultiStepForm', () => {
   });
 
   it('should handle error if custom handler throws after submitting', async () => {
-    const mockedSubmitHandler = jest.fn().mockRejectedValueOnce(new Error());
+    const mockedSubmitHandler = jest
+      .fn()
+      .mockRejectedValueOnce(new Error(networkErrorMessages.serverDown));
 
     const steps = [makeNameForm(mockedSubmitHandler), requiredProps.steps[1]];
 

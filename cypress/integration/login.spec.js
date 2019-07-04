@@ -3,10 +3,10 @@ import existingUser from '../../test-utils/mocks/existingUser';
 import mockPassword from '../../test-utils/mockGenerators/mockPassword';
 import mockUser from '../../test-utils/mockGenerators/mockUser';
 
-describe('login', function() {
+describe('login', () => {
   beforeEach(() => {
     cy.server();
-    cy.route('POST', '/api/v1/sessions').as('postLogin');
+    cy.route('POST', 'auth/login/').as('postLogin');
 
     cy.clearCookies();
     cy.visitAndWaitFor('/login');
@@ -26,12 +26,9 @@ describe('login', function() {
     cy.get('p').contains('Hello Kyle Holmberg!');
 
     cy.getCookies().then(cookies => {
-      expect(
-        cookies.some(({ value }) => value.includes('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9')),
-      ).to.equal(true);
-      expect(cookies.some(({ value }) => value === 'Kyle')).to.be.true;
-      expect(cookies.some(({ value }) => value === 'Holmberg')).to.be.true;
-      expect(cookies.some(({ value }) => value === '97214')).to.be.true;
+      expect(cookies.some(({ value }) => value === existingUser.firstName)).to.be.true;
+      expect(cookies.some(({ value }) => value === existingUser.lastName)).to.be.true;
+      expect(cookies.some(({ value }) => value === existingUser.zipcode)).to.be.true;
     });
   });
 
@@ -44,10 +41,13 @@ describe('login', function() {
 
     cy.wait('@postLogin')
       .its('status')
-      .should('eq', 401);
+      .should('eq', 400);
 
     cy.url().should('contain', '/login');
-    cy.get('div[role="alert"]').should('have.text', 'Invalid Email or password.');
+    cy.get('div[role="alert"]').should(
+      'have.text',
+      'The email or password you entered is incorrect!',
+    );
     cy.getCookies().should('have.length', 0);
   });
 
@@ -61,17 +61,20 @@ describe('login', function() {
 
     cy.wait('@postLogin')
       .its('status')
-      .should('eq', 401);
+      .should('eq', 400);
 
     cy.url().should('contain', '/login');
-    cy.get('div[role="alert"]').should('have.text', 'Invalid Email or password.');
+    cy.get('div[role="alert"]').should(
+      'have.text',
+      'The email or password you entered is incorrect!',
+    );
     cy.getCookies().should('have.length', 0);
   });
 
   it('should NOT be able to login to existing user when the server is unreachable', () => {
     cy.route({
       method: 'POST',
-      url: '/api/v1/sessions',
+      url: 'auth/login/',
       status: 502,
       response: [],
     }).as('postLogin');
@@ -85,5 +88,37 @@ describe('login', function() {
     cy.url().should('contain', '/login');
     cy.get('div[role="alert"]').should('have.text', networkErrorMessages.serverDown);
     cy.getCookies().should('have.length', 0);
+  });
+});
+
+describe('login?loggedOut=True', () => {
+  beforeEach(() => {
+    cy.clearCookies();
+    cy.getCookies().should('have.length', 0);
+    cy.visit('/login?loggedOut=True');
+  });
+
+  it('should display logged out alert if routed via logout button', () => {
+    cy.get('div[role="alert"]').should('have.text', 'Logged out successfully.');
+  });
+
+  it('should should not display logged out alert after re-render', () => {
+    cy.get('div[role="alert"]').should('have.text', 'Logged out successfully.');
+
+    cy.reload();
+
+    cy.get('div[role="alert"]').should('not.contain.text', 'Logged out successfully.');
+  });
+
+  it('should not display logged out alert after invalid login attempt', () => {
+    const fakeUser = mockUser('nonexistinguser@someemail.com');
+
+    cy.get('div[role="alert"]').should('have.text', 'Logged out successfully.');
+
+    cy.get('input#email').type(fakeUser.email);
+    cy.get('input#password').type(fakeUser.password);
+    cy.get('button[type="submit"]').click();
+
+    cy.get('div[role="alert"]').should('not.have.text', 'Logged out successfully.');
   });
 });

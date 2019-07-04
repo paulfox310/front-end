@@ -1,4 +1,5 @@
 const withCSS = require('@zeit/next-css');
+const withSourceMaps = require('@zeit/next-source-maps')();
 const withBundleAnalyzer = require('@zeit/next-bundle-analyzer');
 const svgoConfig = require('./common/config/svgo');
 
@@ -6,6 +7,20 @@ const nextConfig = withCSS({
   // For now.sh
   // see: https://zeit.co/guides/deploying-nextjs-with-now/
   target: 'serverless',
+
+  // Enable dynamic static exports (if a page can be static, it will be)
+  experimental: {
+    autoExport: true,
+  },
+
+  // eslint-disable-next-line unicorn/prevent-abbreviations
+  env: {
+    GOOGLE_ANALYTICS_TRACKING_ID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
+    LOGROCKET_KEY: process.env.LOGROCKET_KEY,
+    OC_FACEBOOK_KEY: process.env.OC_FACEBOOK_KEY,
+    OC_GOOGLE_KEY: process.env.OC_GOOGLE_KEY,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+  },
 
   // NextCSS Config
   cssModules: true,
@@ -83,4 +98,4 @@ const nextConfig = withCSS({
   },
 });
 
-module.exports = withBundleAnalyzer(nextConfig);
+module.exports = withSourceMaps(withBundleAnalyzer(nextConfig));

@@ -1,22 +1,28 @@
 import React, { Component } from 'react';
 import classNames from 'classnames';
 import Link from 'next/link';
-import PropTypes from 'prop-types';
+import { arrayOf, bool, shape, string } from 'prop-types';
 import PlusIcon from 'static/images/icons/plus.svg';
 import MinusIcon from 'static/images/icons/minus.svg';
 import styles from './NavListItem.css';
 
 export default class NavListItem extends Component {
   static propTypes = {
-    href: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    shouldPrefetch: PropTypes.bool.isRequired,
-    sublinks: PropTypes.arrayOf(
-      PropTypes.shape({
-        name: PropTypes.string.isRequired,
-        href: PropTypes.string.isRequired,
+    href: string.isRequired,
+    name: string.isRequired,
+    shouldPrefetch: bool,
+    sublinks: arrayOf(
+      shape({
+        name: string.isRequired,
+        href: string.isRequired,
+        shouldPrefetch: bool,
       }),
-    ).isRequired,
+    ),
+  };
+
+  static defaultProps = {
+    shouldPrefetch: false,
+    sublinks: [],
   };
 
   state = {
@@ -51,6 +57,7 @@ export default class NavListItem extends Component {
             onMouseLeave={this.hideSublinks}
             role="link"
             tabIndex={0}
+            data-testid={`Nav Item ${props.name}`}
           >
             <span className={styles.linkContent}>{props.name}</span>
           </a>
@@ -82,7 +89,7 @@ export default class NavListItem extends Component {
             >
               {props.sublinks.map(sublink => (
                 <li className={styles.sublinkListItem} key={sublink.name}>
-                  <Link href={sublink.href}>
+                  <Link href={sublink.href} prefetch={sublink.shouldPrefetch || false}>
                     <a
                       className={styles.link}
                       key={sublink.name}

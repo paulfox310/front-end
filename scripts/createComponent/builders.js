@@ -4,18 +4,18 @@ module.exports = {
   // Output generated for component's definition file
   buildJS: componentName =>
     `import React from 'react';
-import PropTypes from 'prop-types';
+import { oneOfType, arrayOf, element, string, node } from 'prop-types';
 import classNames from 'classnames';
 import styles from './${componentName}.css';
 
 export default class ${componentName} extends React.Component {
   static propTypes = {
-    children: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.node),
-      PropTypes.element,
-      PropTypes.string,
+    children: oneOfType([
+      arrayOf(node),
+      element,
+      string,
     ]).isRequired,
-    className: PropTypes.string,
+    className: string,
   };
 
   static defaultProps = {
@@ -48,7 +48,7 @@ storiesOf('${componentName}', module)
     'default',
     withInfo()(() => (
       <${componentName}>
-        {text('children', 'PropTypes.string or .node')}
+        {text('children', 'string or .node')}
       </${componentName}>
     )),
   );
@@ -56,8 +56,7 @@ storiesOf('${componentName}', module)
 
   // Output generated for component's test file
   buildTestJs: componentName =>
-    `/* eslint-env jest */
-import React from 'react';
+    `import React from 'react';
 import createSnapshotTest from 'test-utils/createSnapshotTest';
 
 import ${componentName} from '../${componentName}';

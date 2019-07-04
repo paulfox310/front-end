@@ -1,4 +1,4 @@
-/* eslint-env jest */
+/* eslint-disable jsx-a11y/label-has-associated-control */
 import React from 'react';
 import { shallow } from 'enzyme';
 import createSnapshotTest from 'test-utils/createSnapshotTest';

@@ -97,6 +97,20 @@ const questions = {
       ),
     },
     {
+      question: 'Are mentors available? If so, how do I request one?',
+      answer: (
+        <>
+          While we do not have a long-term mentorship program, mentors are available for 30-minute
+          sessions to assist you with things like mock interviews, code reviews, or general
+          guidance. To request a mentorship session, type &quot;/mentor&quot; in any of our{' '}
+          <OutboundLink analyticsEventLabel="QnA Link" href="http://operation-code.slack.com">
+            Slack channels
+          </OutboundLink>{' '}
+          and fill out the form.
+        </>
+      ),
+    },
+    {
       question: 'What are the hours of operation for Operation Code?',
       answer: (
         <>
@@ -156,11 +170,7 @@ const questions = {
       question: "My question isn't listed. How do I contact Operation Code?",
       answer: (
         <>
-          If you have a question that isn&apos;t listed here on our FAQ or our{' '}
-          <OutboundLink analyticsEventLabel="QnA Link" href="https://medium.com/@operation_code">
-            blog
-          </OutboundLink>{' '}
-          , write to{' '}
+          If you have a question that isn&apos;t listed here on our FAQ, write to{' '}
           <OutboundLink
             analyticsEventLabel="QnA Link"
             href="mailto:staff@operationcode.org?subject=Question Not On FAQ"

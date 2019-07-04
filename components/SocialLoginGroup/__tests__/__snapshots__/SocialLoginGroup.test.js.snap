@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SocialLoginGroup should render with required props 1`] = `
+<div
+  className="flexRow SocialLoginGroup"
+>
+  <div
+    className="alertContainer fullWidth"
+  >
+    <div
+      className="Alert flexRow alertFill error"
+      role="alert"
+    >
+      
+    </div>
+  </div>
+</div>
+`;
